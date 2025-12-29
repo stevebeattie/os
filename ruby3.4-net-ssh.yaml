@@ -4,7 +4,6 @@ package:
   epoch: 0
   description: Pure Ruby implementation of an SSH (protocol 2) client
   copyright:
-    - license: Ruby
     - license: MIT
 
 environment:

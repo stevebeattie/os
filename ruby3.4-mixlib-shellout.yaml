@@ -1,14 +1,13 @@
 package:
-  name: ruby3.4-net-scp
-  version: "4.1.0"
+  name: ruby3.4-mixlib-shellout
+  version: "3.4.9"
   epoch: 0
-  description: Pure Ruby implementation of the SCP protocol
+  description: Ruby mixin library for subprocess management, output collection
   copyright:
-    - license: MIT
+    - license: Apache-2.0
   dependencies:
     runtime:
-      #- ruby${{vars.rubyMM}}-date
-      - ruby${{vars.rubyMM}}-net-ssh
+      - ruby${{vars.rubyMM}}-chef-utils
 
 environment:
   contents:
@@ -23,8 +22,8 @@ environment:
 pipeline:
   - uses: git-checkout
     with:
-      expected-commit: 29e2c4a7f69cef75dc686d4616a6da45b619a7ae
-      repository: https://github.com/net-ssh/net-scp
+      expected-commit: 571fe41650108862aa0156d87013d005a3455e59
+      repository: https://github.com/chef/mixlib-shellout
       tag: v${{package.version}}
 
   - uses: ruby/build
@@ -39,12 +38,12 @@ pipeline:
   - uses: ruby/clean
 
 vars:
-  gem: net-scp
+  gem: mixlib-shellout
 
 update:
   enabled: true
   github:
-    identifier: net-ssh/net-scp
+    identifier: chef/mixlib-shellout
     strip-prefix: v
     use-tag: true
 
@@ -67,11 +66,11 @@ test:
   pipeline:
     - runs: |
         # Test that our installed package is importable
-        ruby -e "require 'net/scp'"
+        ruby -e "require 'mixlib/shellout'"
     - uses: git-checkout
       with:
-        expected-commit: 29e2c4a7f69cef75dc686d4616a6da45b619a7ae
-        repository: https://github.com/net-ssh/net-scp
+        expected-commit: 571fe41650108862aa0156d87013d005a3455e59
+        repository: https://github.com/chef/mixlib-shellout
         tag: v${{package.version}}
     - runs: |
         # Run upstream tests: against the repo's code not our installed

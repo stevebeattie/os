@@ -1,14 +1,16 @@
 package:
-  name: ruby3.4-net-scp
-  version: "4.1.0"
+  name: ruby3.4-train
+  version: "3.14.1"
   epoch: 0
-  description: Pure Ruby implementation of the SCP protocol
+  description: Transport Interface to unify communication over SSH, WinRM, and friends.
   copyright:
-    - license: MIT
+    - license: Ruby
+    - license: Apache-2.0
   dependencies:
     runtime:
-      #- ruby${{vars.rubyMM}}-date
+      - ruby${{vars.rubyMM}}-addressable
       - ruby${{vars.rubyMM}}-net-ssh
+      - ruby${{vars.rubyMM}}-train-core
 
 environment:
   contents:
@@ -23,8 +25,8 @@ environment:
 pipeline:
   - uses: git-checkout
     with:
-      expected-commit: 29e2c4a7f69cef75dc686d4616a6da45b619a7ae
-      repository: https://github.com/net-ssh/net-scp
+      expected-commit: fd87e91ff17e1ac3e7075d710166b7a1b5667f60
+      repository: https://github.com/inspec/train/
       tag: v${{package.version}}
 
   - uses: ruby/build
@@ -39,12 +41,12 @@ pipeline:
   - uses: ruby/clean
 
 vars:
-  gem: net-scp
+  gem: train
 
 update:
   enabled: true
   github:
-    identifier: net-ssh/net-scp
+    identifier: inspec/train
     strip-prefix: v
     use-tag: true
 
@@ -53,6 +55,24 @@ var-transforms:
     match: ^ruby(\d\.\d+)-.*
     replace: $1
     to: rubyMM
+
+subpackages:
+  - name: ruby${{vars.rubyMM}}-train-core
+    dependencies:
+      runtime:
+        - ruby${{vars.rubyMM}}-chef-utils
+        - ruby${{vars.rubyMM}}-ffi
+        - ruby${{vars.rubyMM}}-mixlib-shellout
+        - ruby${{vars.rubyMM}}-net-scp
+    pipeline:
+      - uses: ruby/build
+        with:
+          gem: ${{vars.gem}}-core
+      - uses: ruby/install
+        with:
+          gem: ${{vars.gem}}-core
+          version: ${{package.version}}
+      - uses: ruby/clean
 
 test:
   environment:
@@ -67,11 +87,11 @@ test:
   pipeline:
     - runs: |
         # Test that our installed package is importable
-        ruby -e "require 'net/scp'"
+        ruby -e "require 'train'"
     - uses: git-checkout
       with:
-        expected-commit: 29e2c4a7f69cef75dc686d4616a6da45b619a7ae
-        repository: https://github.com/net-ssh/net-scp
+        expected-commit: fd87e91ff17e1ac3e7075d710166b7a1b5667f60
+        repository: https://github.com/inspec/train
         tag: v${{package.version}}
     - runs: |
         # Run upstream tests: against the repo's code not our installed

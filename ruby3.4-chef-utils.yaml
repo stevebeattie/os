@@ -1,14 +1,15 @@
+# depending on how much of chef's gems we need to use and support, we
+# may just want one omnibus source yaml
 package:
-  name: ruby3.4-net-scp
-  version: "4.1.0"
+  name: ruby3.4-chef-utils
+  version: "19.1.135"
   epoch: 0
-  description: Pure Ruby implementation of the SCP protocol
+  description: Basic utility functions for Core Chef Infra development
   copyright:
-    - license: MIT
+    - license: Apache-2.0
   dependencies:
     runtime:
-      #- ruby${{vars.rubyMM}}-date
-      - ruby${{vars.rubyMM}}-net-ssh
+      - ruby${{vars.rubyMM}}-concurrent-ruby
 
 environment:
   contents:
@@ -23,28 +24,30 @@ environment:
 pipeline:
   - uses: git-checkout
     with:
-      expected-commit: 29e2c4a7f69cef75dc686d4616a6da45b619a7ae
-      repository: https://github.com/net-ssh/net-scp
+      expected-commit: 059a058c4e8016f33da75a673c1746b6d68aa54c
+      repository: https://github.com/chef/chef/
       tag: v${{package.version}}
 
   - uses: ruby/build
     with:
+      dir: chef-utils
       gem: ${{vars.gem}}
 
   - uses: ruby/install
     with:
+      dir: chef-utils
       gem: ${{vars.gem}}
       version: ${{package.version}}
 
   - uses: ruby/clean
 
 vars:
-  gem: net-scp
+  gem: chef-utils
 
 update:
   enabled: true
   github:
-    identifier: net-ssh/net-scp
+    identifier: chef/chef
     strip-prefix: v
     use-tag: true
 
@@ -67,14 +70,4 @@ test:
   pipeline:
     - runs: |
         # Test that our installed package is importable
-        ruby -e "require 'net/scp'"
-    - uses: git-checkout
-      with:
-        expected-commit: 29e2c4a7f69cef75dc686d4616a6da45b619a7ae
-        repository: https://github.com/net-ssh/net-scp
-        tag: v${{package.version}}
-    - runs: |
-        # Run upstream tests: against the repo's code not our installed
-        # package, but at least find out if we have incompatibilities
-        bundle install
-        bundle exec rake test
+        ruby -e "require 'chef-utils'"
