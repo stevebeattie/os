@@ -1,0 +1,83 @@
+# this version of tomlrb is the only version which satisfies
+# cinc-auditor's dependencies:
+#   chef-config wants tomlrb ~> 1.2
+#   inspec-core wants tomrlb => 1.3 and < 2.1
+#
+# Even more annoyingly, upstream deleted(?) the 1.3.0 git tag while
+# leaving the gem of this version published.
+# This looks to have been upstream commit 683b304f3e3f5aff6c9220943aad71c76c924d5c
+package:
+  name: ruby3.4-tomlrb-1.3.0
+  version: "1.3.0"
+  epoch: 0
+  description: A Racc based TOML parser (v1.2 series)
+  copyright:
+    - license: MIT
+  dependencies:
+    provides:
+      - ruby${{vars.rubyMM}}-tomlrb=${{package.full-version}}
+
+environment:
+  contents:
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - git
+      - ruby-${{vars.rubyMM}}
+      - ruby-${{vars.rubyMM}}-dev
+
+pipeline:
+  - uses: fetch
+    with:
+      expected-sha256: 68666bf53fa70ba686a48a7435ce7e086f5227c58c4c993bd9792f4760f2a503
+      uri: https://rubygems.org/downloads/${{vars.gem}}-${{package.version}}.gem
+
+  - uses: ruby/install
+    with:
+      gem-file: ${{vars.gem}}-${{package.version}}.gem
+      version: ${{package.version}}
+
+  - uses: ruby/clean
+
+vars:
+  gem: tomlrb
+
+update:
+  enabled: true
+  github:
+    identifier: fbernier/tomlrb
+    strip-prefix: v
+    tag-filter: v1.2.
+    use-tag: true
+
+var-transforms:
+  - from: ${{package.name}}
+    match: ^ruby(\d\.\d+)-.*
+    replace: $1
+    to: rubyMM
+
+test:
+  environment:
+    contents:
+      packages:
+        - build-base
+        - ruby-${{vars.rubyMM}}-dev
+        - ruby${{vars.rubyMM}}-bundler
+        - ruby${{vars.rubyMM}}-json
+        - ruby${{vars.rubyMM}}-psych
+        - ruby${{vars.rubyMM}}-stringio
+  pipeline:
+    - runs: |
+        # Test that our installed package is importable
+        ruby -e "require 'tomlrb'"
+    - uses: git-checkout
+      with:
+        expected-commit: faf82ee76bfbd600b54953edbe7d6f26314c3ddb
+        repository: https://github.com/fbernier/tomlrb
+        tag: v${{package.version}}
+    - runs: |
+        # Run upstream tests: against the repo's code not our installed
+        # package, but at least find out if we have incompatibilities
+        bundle install
+        bundle exec rake test
