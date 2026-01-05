@@ -1,0 +1,79 @@
+package:
+  name: ruby3.4-mixlib-log
+  version: "3.2.9"
+  epoch: 0
+  description: A simple class based Log mechanism, similar to Merb and Chef
+  copyright:
+    - license: Apache-2.0
+  dependencies:
+    runtime:
+      - ruby${{vars.rubyMM}}-ffi
+
+environment:
+  contents:
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - git
+      - ruby-${{vars.rubyMM}}
+      - ruby-${{vars.rubyMM}}-dev
+
+pipeline:
+  - uses: git-checkout
+    with:
+      expected-commit: a37bb6d1b1be40b02e7eb9465908a0d39549f7dd
+      repository: https://github.com/chef/mixlib-log
+      tag: v${{package.version}}
+
+  - uses: ruby/build
+    with:
+      gem: ${{vars.gem}}
+
+  - uses: ruby/install
+    with:
+      gem: ${{vars.gem}}
+      version: ${{package.version}}
+
+  - uses: ruby/clean
+
+vars:
+  gem: mixlib-log
+
+update:
+  enabled: true
+  github:
+    identifier: chef/mixlib-log
+    strip-prefix: v
+    use-tag: true
+
+var-transforms:
+  - from: ${{package.name}}
+    match: ^ruby(\d\.\d+)-.*
+    replace: $1
+    to: rubyMM
+
+test:
+  environment:
+    contents:
+      packages:
+        - build-base
+        - ruby-${{vars.rubyMM}}-dev
+        - ruby${{vars.rubyMM}}-bundler
+        - ruby${{vars.rubyMM}}-json
+        - ruby${{vars.rubyMM}}-psych
+        - ruby${{vars.rubyMM}}-stringio
+  pipeline:
+    - runs: |
+        # Test that our installed package is importable
+        ruby -e "require 'mixlib/log'"
+#    - uses: git-checkout
+#      with:
+#        expected-commit: 5fa6a0cf89a6d63ffde704990b2437720da89d66
+#        repository: https://github.com/net-ssh/net-ssh
+#        tag: v${{package.version}}
+#    - runs: |
+#        # Run upstream tests: against the repo's code not our installed
+#        # package, but at least find out if we have incompatibilities
+#        bundle install
+#        bundle exec rake test

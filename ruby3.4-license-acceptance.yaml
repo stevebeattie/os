@@ -1,0 +1,83 @@
+package:
+  name: ruby3.4-license-acceptance
+  version: "2.2.1"
+  epoch: 0
+  description: Chef Software libraries for accepting usage license
+  copyright:
+    - license: Apache-2.0
+  dependencies:
+    runtime:
+      - ruby${{vars.rubyMM}}-pastel
+      - ruby${{vars.rubyMM}}-tomlrb
+      - ruby${{vars.rubyMM}}-tty-box
+      - ruby${{vars.rubyMM}}-tty-prompt
+
+environment:
+  contents:
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - git
+      - ruby-${{vars.rubyMM}}
+      - ruby-${{vars.rubyMM}}-dev
+
+pipeline:
+  - uses: git-checkout
+    with:
+      expected-commit: 47ede7165c390cee3c3326af3d563ef92ef99c9a
+      repository: https://github.com/chef/license-acceptance/
+      tag: ${{package.version}}
+
+  - uses: ruby/build
+    with:
+      dir: components/ruby
+      gem: ${{vars.gem}}
+
+  - uses: ruby/install
+    with:
+      dir: components/ruby
+      gem: ${{vars.gem}}
+      version: ${{package.version}}
+
+  - uses: ruby/clean
+
+vars:
+  gem: license-acceptance
+
+update:
+  enabled: true
+  github:
+    identifier: chef/license-acceptance
+    use-tag: true
+
+var-transforms:
+  - from: ${{package.name}}
+    match: ^ruby(\d\.\d+)-.*
+    replace: $1
+    to: rubyMM
+
+test:
+  environment:
+    contents:
+      packages:
+        - build-base
+        - ruby-${{vars.rubyMM}}-dev
+        - ruby${{vars.rubyMM}}-bundler
+        - ruby${{vars.rubyMM}}-json
+        - ruby${{vars.rubyMM}}-psych
+        - ruby${{vars.rubyMM}}-stringio
+  pipeline:
+    - runs: |
+        # Test that our installed package is importable
+        ruby -e "require 'license_acceptance/version'"
+#    - uses: git-checkout
+#      with:
+#        expected-commit: 5fa6a0cf89a6d63ffde704990b2437720da89d66
+#        repository: https://github.com/net-ssh/net-ssh
+#        tag: v${{package.version}}
+#    - runs: |
+#        # Run upstream tests: against the repo's code not our installed
+#        # package, but at least find out if we have incompatibilities
+#        bundle install
+#        bundle exec rake test

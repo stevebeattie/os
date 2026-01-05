@@ -1,0 +1,83 @@
+package:
+  name: ruby3.4-rubocop
+  version: "1.82.1"
+  epoch: 0
+  description: "A Ruby static code analyzer and formatter, based on the community Ruby style guide"
+  copyright:
+    - license: MIT
+  dependencies:
+    runtime:
+      - ruby${{vars.rubyMM}}-language_server-protocol
+      - ruby${{vars.rubyMM}}-lint_roller
+      - ruby${{vars.rubyMM}}-parallel
+
+environment:
+  contents:
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - git
+      - ruby-${{vars.rubyMM}}
+      - ruby-${{vars.rubyMM}}-dev
+
+pipeline:
+  - uses: git-checkout
+    with:
+      expected-commit: 5711dcb9850c5adb3df9e5142fa9a1ae4e987c3f
+      repository: https://github.com/rubocop/rubocop
+      tag: v${{package.version}}
+
+  - uses: ruby/build
+    with:
+      gem: ${{vars.gem}}
+
+  - uses: ruby/install
+    with:
+      gem: ${{vars.gem}}
+      version: ${{package.version}}
+
+  - uses: ruby/clean
+
+vars:
+  gem: rubocop
+
+update:
+  enabled: true
+  github:
+    identifier: rubocop/rubocop
+    tag-filter-prefix: v
+    use-tag: true
+
+var-transforms:
+  - from: ${{package.name}}
+    match: ^ruby(\d\.\d+)-.*
+    replace: $1
+    to: rubyMM
+
+test:
+  environment:
+    contents:
+      packages:
+        - build-base
+        - ruby-${{vars.rubyMM}}-dev
+        - ruby${{vars.rubyMM}}-bundler
+        - ruby${{vars.rubyMM}}-json
+        - ruby${{vars.rubyMM}}-psych
+        - ruby${{vars.rubyMM}}-stringio
+  pipeline:
+    - runs: |
+        # Test that our installed package is importable
+        ruby -e "require '${{vars.gem}}'"
+        rubocop --help
+        rubocop --version
+#    - uses: git-checkout
+#      with:
+#        expected-commit: 5fa6a0cf89a6d63ffde704990b2437720da89d66
+#        repository: https://github.com/net-ssh/net-ssh
+#        tag: v${{package.version}}
+#    - runs: |
+#        # Run upstream tests: against the repo's code not our installed
+#        # package, but at least find out if we have incompatibilities
+#        bundle install
+#        bundle exec rake test

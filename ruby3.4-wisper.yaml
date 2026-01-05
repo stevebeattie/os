@@ -1,0 +1,85 @@
+package:
+  name: ruby3.4-wisper
+  version: "2.0.1"
+  epoch: 0
+  description: A micro library providing Ruby objects with Publish-Subscribe capabilities
+  copyright:
+    - license: MIT
+  dependencies:
+    runtime:
+
+environment:
+  contents:
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - git
+      - ruby-${{vars.rubyMM}}
+      - ruby-${{vars.rubyMM}}-dev
+
+pipeline:
+  - uses: git-checkout
+    with:
+      expected-commit: 8d6491fc549c5eb74738c12decac801f32e37472
+      repository: https://github.com/krisleech/wisper
+      tag: v${{package.version}}
+
+# can't use the following because of the signing_key deletion that
+# occurs with no way to avoid it in the ruby/build pipeline
+#  - uses: ruby/build
+#    with:
+#      gem: ${{vars.gem}}
+
+  - name: ruby/build
+    runs: |
+      gem build \
+        ${{vars.gem}}.gemspec
+
+  - uses: ruby/install
+    with:
+      gem: ${{vars.gem}}
+      version: ${{package.version}}
+
+  - uses: ruby/clean
+
+vars:
+  gem: wisper
+
+update:
+  enabled: true
+  github:
+    identifier: krisleech/wisper
+    strip-prefix: v
+    use-tag: true
+
+var-transforms:
+  - from: ${{package.name}}
+    match: ^ruby(\d\.\d+)-.*
+    replace: $1
+    to: rubyMM
+
+test:
+  environment:
+    contents:
+      packages:
+        - build-base
+        - ruby-${{vars.rubyMM}}-dev
+        - ruby${{vars.rubyMM}}-bundler
+        - ruby${{vars.rubyMM}}-json
+        - ruby${{vars.rubyMM}}-psych
+        - ruby${{vars.rubyMM}}-stringio
+  pipeline:
+    - runs: |
+        # Test that our installed package is importable
+        ruby -e "require '${{vars.gem}}'"
+#    - uses: git-checkout
+#      with:
+#        expected-commit: 5fa6a0cf89a6d63ffde704990b2437720da89d66
+#        repository: https://github.com/net-ssh/net-ssh
+#        tag: v${{package.version}}
+#    - runs: |
+#        # Run upstream tests: against the repo's code not our installed
+#        # package, but at least find out if we have incompatibilities
+#        bundle install
+#        bundle exec rake test

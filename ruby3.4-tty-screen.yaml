@@ -1,0 +1,78 @@
+package:
+  name: ruby3.4-tty-screen
+  version: "0.8.2"
+  epoch: 0
+  description: Terminal screen detection - cross platform, major ruby interpreters
+  copyright:
+    - license: MIT
+  dependencies:
+    runtime:
+
+environment:
+  contents:
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - git
+      - ruby-${{vars.rubyMM}}
+      - ruby-${{vars.rubyMM}}-dev
+
+pipeline:
+  - uses: git-checkout
+    with:
+      expected-commit: 5826c29667990d92bc3d70c907a60069af98adeb
+      repository: https://github.com/piotrmurach/tty-screen
+      tag: v${{package.version}}
+
+  - uses: ruby/build
+    with:
+      gem: ${{vars.gem}}
+
+  - uses: ruby/install
+    with:
+      gem: ${{vars.gem}}
+      version: ${{package.version}}
+
+  - uses: ruby/clean
+
+vars:
+  gem: tty-screen
+
+update:
+  enabled: true
+  github:
+    identifier: piotrmurach/tty-screen
+    strip-prefix: v
+    use-tag: true
+
+var-transforms:
+  - from: ${{package.name}}
+    match: ^ruby(\d\.\d+)-.*
+    replace: $1
+    to: rubyMM
+
+test:
+  environment:
+    contents:
+      packages:
+        - build-base
+        - ruby-${{vars.rubyMM}}-dev
+        - ruby${{vars.rubyMM}}-bundler
+        - ruby${{vars.rubyMM}}-json
+        - ruby${{vars.rubyMM}}-psych
+        - ruby${{vars.rubyMM}}-stringio
+  pipeline:
+    - runs: |
+        # Test that our installed package is importable
+        ruby -e "require '${{vars.gem}}'"
+#    - uses: git-checkout
+#      with:
+#        expected-commit: 5fa6a0cf89a6d63ffde704990b2437720da89d66
+#        repository: https://github.com/net-ssh/net-ssh
+#        tag: v${{package.version}}
+#    - runs: |
+#        # Run upstream tests: against the repo's code not our installed
+#        # package, but at least find out if we have incompatibilities
+#        bundle install
+#        bundle exec rake test

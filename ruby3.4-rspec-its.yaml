@@ -1,0 +1,57 @@
+package:
+  name: ruby3.4-rspec-its
+  version: "2.0.0"
+  epoch: 0
+  description: "`its` for RSpec 3 extracted from rspec-core 2.x"
+  copyright:
+    - license: MIT
+  dependencies:
+    runtime:
+      - ruby${{vars.rubyMM}}-rspec-core
+      - ruby${{vars.rubyMM}}-rspec-expectations
+
+environment:
+  contents:
+    packages:
+      - bash
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - coreutils
+      - git
+      - ruby-${{vars.rubyMM}}
+      - ruby-${{vars.rubyMM}}-dev
+
+pipeline:
+  - uses: git-checkout
+    with:
+      expected-commit: 9b1fee340da374a0547228324a38085bdaa2022a
+      repository: https://github.com/rspec/rspec-its
+      tag: v${{package.version}}
+
+  - uses: ruby/build
+    with:
+      gem: ${{vars.gem}}
+
+  - uses: ruby/install
+    with:
+      gem: ${{vars.gem}}
+      version: ${{package.version}}
+
+  - uses: ruby/clean
+
+vars:
+  gem: rspec-its
+  rubyMM: "3.4"
+
+test:
+  pipeline:
+    - runs: |
+       # Test that our installed package is importable
+       ruby -e "require 'rspec/its'"
+
+update:
+  enabled: false
+  exclude-reason: "This repository was archived by the owner on Nov 30, 2024. It is now read-only. v3.13.2 is the latest version."
+  git:
+    strip-prefix: v

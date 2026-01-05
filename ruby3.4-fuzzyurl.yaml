@@ -1,0 +1,68 @@
+package:
+  name: ruby3.4-fuzzyurl
+  version: "0.9.0"
+  epoch: 0
+  description: A Ruby Gem for non-strict parsing, manipulation, and wildcard matching of URLs.
+  copyright:
+    - license: MIT
+  dependencies:
+    runtime:
+      # - ruby${{vars.rubyMM}}-tomlrb
+
+environment:
+  contents:
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - git
+      - ruby-${{vars.rubyMM}}
+      - ruby-${{vars.rubyMM}}-dev
+
+pipeline:
+  - uses: git-checkout
+    with:
+      expected-commit: 9c4afe8fceaef35f0fdfad619a913478cc0e026e
+      repository: https://github.com/gamache/fuzzyurl.rb
+      tag: ${{package.version}}
+
+  - uses: ruby/build
+    with:
+      gem: ${{vars.gem}}
+
+  - uses: ruby/install
+    with:
+      gem: ${{vars.gem}}
+      version: ${{package.version}}
+
+  - uses: ruby/clean
+
+vars:
+  gem: fuzzyurl
+
+update:
+  enabled: true
+  github:
+    identifier: gamache/fuzzyurl.rb
+    use-tag: true
+
+var-transforms:
+  - from: ${{package.name}}
+    match: ^ruby(\d\.\d+)-.*
+    replace: $1
+    to: rubyMM
+
+test:
+  environment:
+    contents:
+      packages:
+        - build-base
+        - ruby-${{vars.rubyMM}}-dev
+        - ruby${{vars.rubyMM}}-bundler
+        - ruby${{vars.rubyMM}}-json
+        - ruby${{vars.rubyMM}}-psych
+        - ruby${{vars.rubyMM}}-stringio
+  pipeline:
+    - runs: |
+        # Test that our installed package is importable
+        ruby -e "require 'fuzzyurl'"
