@@ -1,0 +1,69 @@
+package:
+  name: ruby3.4-pastel
+  version: "0.8.0"
+  epoch: 0
+  description: Terminal output styling with intuitive and clean API
+  copyright:
+    - license: MIT
+  dependencies:
+    runtime:
+      - ruby${{vars.rubyMM}}-tty-color
+
+environment:
+  contents:
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - git
+      - ruby-${{vars.rubyMM}}
+      - ruby-${{vars.rubyMM}}-dev
+
+pipeline:
+  - uses: git-checkout
+    with:
+      expected-commit: afd82952076e605402a54dd0a142cdcebe34edc7
+      repository: https://github.com/piotrmurach/pastel
+      tag: v${{package.version}}
+
+  - uses: ruby/build
+    with:
+      gem: ${{vars.gem}}
+
+  - uses: ruby/install
+    with:
+      gem: ${{vars.gem}}
+      version: ${{package.version}}
+
+  - uses: ruby/clean
+
+vars:
+  gem: pastel
+
+update:
+  enabled: true
+  github:
+    identifier: piotrmurach/pastel
+    strip-prefix: v
+    use-tag: true
+
+var-transforms:
+  - from: ${{package.name}}
+    match: ^ruby(\d\.\d+)-.*
+    replace: $1
+    to: rubyMM
+
+test:
+  environment:
+    contents:
+      packages:
+        - build-base
+        - ruby-${{vars.rubyMM}}-dev
+        - ruby${{vars.rubyMM}}-bundler
+        - ruby${{vars.rubyMM}}-json
+        - ruby${{vars.rubyMM}}-psych
+        - ruby${{vars.rubyMM}}-stringio
+  pipeline:
+    - runs: |
+        # Test that our installed package is importable
+        ruby -e "require 'pastel'"

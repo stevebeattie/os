@@ -1,0 +1,68 @@
+package:
+  name: ruby3.4-tty-color
+  version: "0.6.0"
+  epoch: 0
+  description: Terminal color capabilities detection
+  copyright:
+    - license: Apache-2.0
+  dependencies:
+    runtime:
+
+environment:
+  contents:
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - git
+      - ruby-${{vars.rubyMM}}
+      - ruby-${{vars.rubyMM}}-dev
+
+pipeline:
+  - uses: git-checkout
+    with:
+      expected-commit: e2892eb2a549e313f73cba063c9a0e2e42270acf
+      repository: https://github.com/piotrmurach/tty-color
+      tag: v${{package.version}}
+
+  - uses: ruby/build
+    with:
+      gem: ${{vars.gem}}
+
+  - uses: ruby/install
+    with:
+      gem: ${{vars.gem}}
+      version: ${{package.version}}
+
+  - uses: ruby/clean
+
+vars:
+  gem: tty-color
+
+update:
+  enabled: true
+  github:
+    identifier: piotrmurach/tty-color
+    strip-prefix: v
+    use-tag: true
+
+var-transforms:
+  - from: ${{package.name}}
+    match: ^ruby(\d\.\d+)-.*
+    replace: $1
+    to: rubyMM
+
+test:
+  environment:
+    contents:
+      packages:
+        - build-base
+        - ruby-${{vars.rubyMM}}-dev
+        - ruby${{vars.rubyMM}}-bundler
+        - ruby${{vars.rubyMM}}-json
+        - ruby${{vars.rubyMM}}-psych
+        - ruby${{vars.rubyMM}}-stringio
+  pipeline:
+    - runs: |
+        # Test that our installed package is importable
+        ruby -e "require 'tty-color'"
