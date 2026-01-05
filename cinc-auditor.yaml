@@ -1,0 +1,86 @@
+package:
+  name: cinc-auditor
+  version: 7.0.95
+  epoch: 0
+  description: cinc-auditor is an OSS tool for applying inspec profiles
+  copyright:
+    - license: Apache-2.0
+  dependencies:
+    runtime:
+      # inspec-core
+      - ruby${{vars.ruby-version}}-chef-telemetry
+      - ruby${{vars.ruby-version}}-faraday
+      - ruby${{vars.ruby-version}}-faraday-follow_redirects
+      - ruby${{vars.ruby-version}}-hashie
+      - ruby${{vars.ruby-version}}-license-acceptance
+      - ruby${{vars.ruby-version}}-method_source
+      - ruby${{vars.ruby-version}}-mixlib-log
+      - ruby${{vars.ruby-version}}-multipart-post
+      - ruby${{vars.ruby-version}}-parallel
+      - ruby${{vars.ruby-version}}-parslet
+      - ruby${{vars.ruby-version}}-pry
+      - ruby${{vars.ruby-version}}-rspec
+      - ruby${{vars.ruby-version}}-rspec-its
+      - ruby${{vars.ruby-version}}-rubyzip
+      - ruby${{vars.ruby-version}}-semverse
+      - ruby${{vars.ruby-version}}-sslshake
+      - ruby${{vars.ruby-version}}-thor
+      - ruby${{vars.ruby-version}}-tty-table
+
+vars:
+  ruby-version: 3.4
+
+environment:
+  contents:
+    packages:
+      - bash
+      - busybox
+      - gcc
+      - make
+      # - ruby${{vars.ruby-version}}-bundler
+      - ruby-${{vars.ruby-version}}
+      - ruby-${{vars.ruby-version}}-dev
+
+pipeline:
+  - uses: fetch
+    with:
+      uri: http://downloads.cinc.sh/source/stable/cinc-auditor/cinc-auditor-${{package.version}}.tar.xz
+      expected-sha512: c85a295988d35ca7d2df7757d3ce2c9266159c5494714020175760a5f674b309a7211fe3f8eef74a1f2d08c55509fdc66385cbd186b59d861f72ec880d468a93
+
+  - uses: ruby/build
+    with:
+      gem: inspec
+
+  - uses: ruby/build
+    with:
+      gem: inspec-core
+
+  - uses: ruby/build
+    with:
+      dir: inspec-bin
+      gem: cinc-auditor-bin
+
+  - uses: ruby/install
+    with:
+      gem: inspec
+      version: ${{package.version}}
+
+  - uses: ruby/install
+    with:
+      gem: inspec-core
+      version: ${{package.version}}
+
+  - uses: ruby/install
+    with:
+      dir: inspec-bin
+      gem: cinc-auditor-bin
+      version: ${{package.version}}
+
+  - runs: |
+      echo 'gem: --no-rdoc --no-ri' >> ~/.gemrc
+      GEM_DIR="${{targets.destdir}}$(ruby -e 'puts Gem.default_dir')"
+
+test:
+  pipeline:
+    - runs: |
+        cinc-auditor --help
